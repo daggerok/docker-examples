@@ -1,3 +1,14 @@
+docker-stack-deploy/app-stack
+
+!00-Dockerfile/docker-app/Dockerile
+!00-Dockerfile/docker-app/app/Dockerile
+
+!01-docker-compose/compose-app/docker-compose-all.yml
+
+!02-docker-stack-deploy/app-stack/Dockerile
+!02-docker-stack-deploy/app-stack/app/Dockerile
+!02-docker-stack-deploy/app-stack/docker-compose-all.yml
+
 # Compiled class file
 *.class
 

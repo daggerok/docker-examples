@@ -1,0 +1,92 @@
+= Dockerfile example
+
+.clone app for Dockerfile demo
+[source,bash]
+----
+git clone https://github.com/daggerok/parse-server-example.git compose-app
+cd docker-app
+git reset --hard a8e06cae6ad9578a7f22a04435371fabe6dbc619
+yarn -i
+----
+
+.run mongo
+[source,bash]
+----
+docker run -d --rm \
+  --name mongo \
+  -p 27017:27017 \
+  healthcheck/mongo:latest
+----
+
+.run mongo-express
+[source,bash]
+----
+docker run -d --rm \
+  --name mongo-express \
+  --link mongo:mongo \
+  -e ME_CONFIG_MONGODB_ENABLE_ADMIN=true \
+  -e ME_CONFIG_OPTIONS_EDITORTHEME=ambiance \
+  -e ME_CONFIG_MONGODB_PORT=27017 \
+  -e ME_CONFIG_MONGODB_SERVER=mongo \
+  -p 8081:8081 \
+  mongo-express:0.42
+----
+
+.edit server ./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM node:8.5.0-alpine
+ADD . /app
+WORKDIR /app
+CMD ["node", "index.js"]
+----
+
+.build and run parse server app
+[source,bash]
+----
+docker build -t daggerok/parse-server-app .
+# ...
+docker run -d --rm \
+  --name parse-server \
+  --link mongo:mongo \
+  -e DATABASE_URI="mongodb://localhost:27017/dev" \
+  -p 1337:1337 \
+  daggerok/parse-server-app
+----
+
+.edit client ./app./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM nginx:1.13.5-alpine
+ADD ./ /usr/share/nginx/html
+----
+
+.build and run parse client app
+[source,bash]
+----
+docker build -t daggerok/parse-client-app ./app
+# ...
+docker run -d --rm \
+  --name parse-client \
+  --link parse-server:parse-server \
+  -p 80:80 \
+  daggerok/parse-client-app
+----
+
+.check deployments
+[source,bash]
+----
+http :8081
+http :1337
+http :80
+----
+
+or else in drowser:
+
+. link:http://localhost:8081/[mongo express on http://localhost:8081]
+. link:http://localhost:1337/[parse server app on http://localhost:1337]
+. link:http://localhost/[parse client app on http://localhost]
+
+read more:
+
+. https://docs.docker.com/engine/swarm/stack-deploy/#set-up-a-docker-registry

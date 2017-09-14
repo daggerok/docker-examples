@@ -1,0 +1,81 @@
+= Deploy docker stack to swarm cluster
+
+in progres...
+
+.initialize docker swarm cluster
+[source,bash]
+----
+docker swarm init
+Swarm initialized: current node (2id006r5r6boesrvtexlgvn4z) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-1rd0wjyzyh7x7jxrzhsbtec9aj257j3bc2aq1xneg2kynp8ng7-595zrmpxlmnvjh7gll9gih455 192.168.65.2:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+docker node ls
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS
+2id006r5r6boesrvtexlgvn4z *   moby                Ready               Active              Leader
+----
+
+.add docker service registery as a service
+[source,bash]
+----
+docker service create --name registry --publish 5000:5000 registry:2
+2g1qzxk4uo98akb4f29m4e6ox
+Since --detach=false was not specified, tasks will be created in the background.
+In a future release, --detach=false will become the default.
+
+docker service ls
+
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+2g1qzxk4uo98        registry            replicated          1/1                 registry:2          *:5000->5000/tcp
+
+curl http://localhost:5000/v2/                                                                                  22:38:20
+{}
+----
+
+.clone app for stack deploy demo
+[source,bash]
+----
+git clone https://github.com/daggerok/parse-server-example.git app-stack
+cd app-stack
+git reset --hard a8e06cae6ad9578a7f22a04435371fabe6dbc619
+yarn -i
+----
+
+.create requirements.txt file with content
+[source,bash]
+----
+mongo
+mongo-express
+----
+
+.create server ./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM node:8.5.0-alpine
+ADD . /app
+WORKDIR /app
+CMD ["node", "index.js"]
+----
+
+.create client ./app./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM nginx:1.13.5-alpine
+ADD ./app /usr/share/nginx/html
+----
+
+TODO: docker stack deploy...
+
+check deployments:
+
+. link:http://localhost:8081/[mongo express on http://localhost:8081]
+. link:http://localhost:1337/[parse server app on http://localhost:1337]
+. link:http://localhost/[parse client app on http://localhost]
+
+read more:
+
+. https://docs.docker.com/engine/swarm/stack-deploy/#set-up-a-docker-registry
