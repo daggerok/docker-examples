@@ -5,7 +5,7 @@
 ----
 git clone https://github.com/daggerok/parse-server-example.git compose-app
 cd compose-app
-git reset --hard a8e06cae6ad9578a7f22a04435371fabe6dbc619
+git reset --hard f35790c00cdf820c79f389fd587fba20c44b844d
 yarn -i
 ----
 

@@ -2,6 +2,114 @@
 
 in progres...
 
+.clone app for stack deploy demo
+[source,bash]
+----
+git clone https://github.com/daggerok/parse-server-example.git app-stack
+cd app-stack
+git reset --hard f35790c00cdf820c79f389fd587fba20c44b844d
+yarn -i
+----
+
+.create requirements.txt file with content
+[source,bash]
+----
+mongo
+mongo-express
+----
+
+.create server ./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM node:8.5.0-alpine
+ADD . /app
+WORKDIR /app
+CMD ["node", "index.js"]
+----
+
+.create client ./app./Dockerfile file with content
+[source,Dockerfile]
+----
+FROM nginx:1.13.5-alpine
+ADD ./app /usr/share/nginx/html
+----
+
+.edit ./docker-compose-all.yml file (set version: 3)
+[source,docker-compose.yml]
+----
+version: "3"
+services:
+  mongo:
+    restart: always
+    image: healthcheck/mongo:latest
+    ports: ["27017:27017"]
+    networks: [backing-services]
+    volumes: ["mongo-data:/data/db"]
+    environment:
+      # MONGO_PORT_27017_TCP_ADDR: "localhost"
+      MONGO_PORT_27017_TCP_PORT: 27017
+  mongo-express:
+    restart: always
+    depends_on: [mongo]
+    image: mongo-express:0.42
+    ports: ["8081:8081"]
+    networks: [backing-services]
+    environment:
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
+      ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: "mongo"
+  parse-server-app:
+    restart: always
+    image: node:8.5.0-alpine
+    depends_on: [mongo]
+    ports: ["1337:1337"]
+    networks: [backing-services]
+    volumes:
+      - "parse-server-app-data:/app"
+      - ".:/app"
+    working_dir: /app
+    environment:
+      MONGODB_URI: "mongodb://mongo:27017/dev"
+    entrypoint: sh -c "node ./index.js"
+  parse-client-app:
+    restart: always
+    image: nginx:1.13.5-alpine
+    depends_on: [parse-server-app]
+    ports: ["80:80"]
+    networks: [backing-services]
+    volumes:
+      - "parse-client-app-data:/var/log/nginx"
+      - "./app:/usr/share/nginx/html:ro"
+volumes:
+  mongo-data: {}
+  parse-server-app-data: {}
+  parse-client-app-data: {}
+networks:
+  backing-services:
+    driver: bridge
+----
+
+.bootstrap all
+[source,bash]
+----
+docker-compose -f docker-compose-all-v3.yml up
+----
+
+.check deployments
+[source,bash]
+----
+http :8081
+http :1337
+http :80
+----
+
+.stop and remove volumes
+[source,bash]
+----
+docker-compose -f docker-compose-all-v3.yml down --volumes
+----
+
 .initialize docker swarm cluster
 [source,bash]
 ----
@@ -36,36 +144,16 @@ curl http://localhost:5000/v2/                                                  
 {}
 ----
 
-.clone app for stack deploy demo
+.add docker service registery as a service
 [source,bash]
 ----
-git clone https://github.com/daggerok/parse-server-example.git app-stack
-cd app-stack
-git reset --hard a8e06cae6ad9578a7f22a04435371fabe6dbc619
-yarn -i
-----
-
-.create requirements.txt file with content
-[source,bash]
-----
-mongo
-mongo-express
-----
-
-.create server ./Dockerfile file with content
-[source,Dockerfile]
-----
-FROM node:8.5.0-alpine
-ADD . /app
-WORKDIR /app
-CMD ["node", "index.js"]
-----
-
-.create client ./app./Dockerfile file with content
-[source,Dockerfile]
-----
-FROM nginx:1.13.5-alpine
-ADD ./app /usr/share/nginx/html
+docker-compose down --volumes                                                          15:13:11
+Stopping appstack_mongo-express_1 ... done
+Stopping appstack_mongo_1         ... done
+Removing appstack_mongo-express_1 ... done
+Removing appstack_mongo_1         ... done
+Removing network appstack_backing-services
+Removing volume appstack_mongo-data
 ----
 
 TODO: docker stack deploy...
