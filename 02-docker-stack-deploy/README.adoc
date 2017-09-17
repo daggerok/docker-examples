@@ -1,21 +1,40 @@
 = Deploy docker stack to swarm cluster
 
-in progres...
+.initialize docker swarm cluster
+[source,bash]
+----
+docker swarm init
+Swarm initialized: current node (neksfjxl8w4g4wucbmulcn4v4) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-055jfc2e5v7e4s5t09b7jitkazywh7cl2skex4e5j6ik9nn65o-eiyavjwq8rtwb54xa6vw5cvnp 192.168.65.2:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+docker service create --name registry --publish 5000:5000 registry:2
+mww34f6todmg3yv2unj6tx00h
+Since --detach=false was not specified, tasks will be created in the background.
+In a future release, --detach=false will become the default.
+
+# wait a little...
+
+docker service ls
+ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
+mww34f6todmg        registry            replicated          1/1                 registry:2          *:5000->5000/tcp
+
+curl http://localhost:5000/v2/
+{}
+----
 
 .clone app for stack deploy demo
 [source,bash]
 ----
 git clone https://github.com/daggerok/parse-server-example.git app-stack
 cd app-stack
-git reset --hard f35790c00cdf820c79f389fd587fba20c44b844d
+git reset --hard 95cd8f5d72fb19cce1dcbc9f9aa6f9a57c59b2f0
 yarn -i
-----
-
-.create requirements.txt file with content
-[source,bash]
-----
-mongo
-mongo-express
+# ...
 ----
 
 .create server ./Dockerfile file with content
@@ -34,6 +53,32 @@ FROM nginx:1.13.5-alpine
 ADD ./app /usr/share/nginx/html
 ----
 
+.build app
+[source,bash]
+----
+docker build -t 127.0.0.1:5000/stack-app .
+Sending build context to Docker daemon  121.1MB
+Step 1/4 : FROM node:8.5.0-alpine
+8.5.0-alpine: Pulling from library/node
+88286f41530e: Pull complete
+aa0be12c5610: Pull complete
+719d346e6de2: Pull complete
+Digest: sha256:945cf56668d3e58a3b045291564963ccde29a68da9c1483e19d8a0b06749db06
+Status: Downloaded newer image for node:8.5.0-alpine
+ ---> 7a779c246a41
+Step 2/4 : ADD . /app
+ ---> 08ecc2956c46
+Step 3/4 : WORKDIR /app
+ ---> 976c98bfd868
+Removing intermediate container cc286f18bcc9
+Step 4/4 : CMD node index.js
+ ---> Running in dc3f356c1faa
+ ---> 1eb071c836b5
+Removing intermediate container dc3f356c1faa
+Successfully built 1eb071c836b5
+Successfully tagged 127.0.0.1:5000/stack-app:latest
+----
+
 .edit ./docker-compose-all.yml file (set version: 3)
 [source,docker-compose.yml]
 ----
@@ -43,17 +88,14 @@ services:
     restart: always
     image: healthcheck/mongo:latest
     ports: ["27017:27017"]
-    networks: [backing-services]
     volumes: ["mongo-data:/data/db"]
     environment:
-      # MONGO_PORT_27017_TCP_ADDR: "localhost"
       MONGO_PORT_27017_TCP_PORT: 27017
   mongo-express:
     restart: always
     depends_on: [mongo]
     image: mongo-express:0.42
     ports: ["8081:8081"]
-    networks: [backing-services]
     environment:
       ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_OPTIONS_EDITORTHEME: "ambiance"
@@ -61,23 +103,16 @@ services:
       ME_CONFIG_MONGODB_SERVER: "mongo"
   parse-server-app:
     restart: always
-    image: node:8.5.0-alpine
-    depends_on: [mongo]
+    image: 127.0.0.1:5000/stack-app
+    build: .
+    depends_on: [mongo-express]
+    volumes: ["parse-server-app-data:/app"]
     ports: ["1337:1337"]
-    networks: [backing-services]
-    volumes:
-      - "parse-server-app-data:/app"
-      - ".:/app"
-    working_dir: /app
-    environment:
-      MONGODB_URI: "mongodb://mongo:27017/dev"
-    entrypoint: sh -c "node ./index.js"
   parse-client-app:
     restart: always
     image: nginx:1.13.5-alpine
     depends_on: [parse-server-app]
     ports: ["80:80"]
-    networks: [backing-services]
     volumes:
       - "parse-client-app-data:/var/log/nginx"
       - "./app:/usr/share/nginx/html:ro"
@@ -85,18 +120,90 @@ volumes:
   mongo-data: {}
   parse-server-app-data: {}
   parse-client-app-data: {}
-networks:
-  backing-services:
-    driver: bridge
 ----
 
 .bootstrap all
 [source,bash]
 ----
-docker-compose -f docker-compose-all-v3.yml up
+docker-compose -f docker-compose-all-v3.yml up -d --build
+WARNING: The Docker Engine you are using is running in swarm mode.
+
+Compose does not use swarm mode to deploy services to multiple nodes in a swarm. All containers will be scheduled on the current node.
+
+To deploy your application across the swarm, use `docker stack deploy`.
+
+Creating network "appstack_default" with the default driver
+Creating volume "appstack_parse-server-app-data" with default driver
+Creating volume "appstack_parse-client-app-data" with default driver
+Creating volume "appstack_mongo-data" with default driver
+Pulling mongo (healthcheck/mongo:latest)...
+latest: Pulling from healthcheck/mongo
+065132d9f705: Pull complete
+1b21467dc4da: Pull complete
+f77d664c71bb: Pull complete
+4b6a6c99696b: Pull complete
+58576d6bcadc: Pull complete
+266b0c4c8733: Pull complete
+3f89e28a451c: Pull complete
+0b32a54f95d6: Pull complete
+d6705a7fa391: Pull complete
+8e5c1660e0fa: Pull complete
+1a3eb91e7301: Pull complete
+f19207d7a2b6: Pull complete
+Digest: sha256:b199bbb7809c6cea2af88b132d9749ac97546db3a2b0376841a4d6316690845b
+Status: Downloaded newer image for healthcheck/mongo:latest
+Pulling mongo-express (mongo-express:0.42)...
+0.42: Pulling from library/mongo-express
+aa18ad1a0d33: Pull complete
+15a33158a136: Pull complete
+20e2ecbdc669: Pull complete
+0ba36da051a2: Pull complete
+83260829fd75: Pull complete
+7459ed23b0db: Pull complete
+e92fea48120e: Pull complete
+da4940b6f539: Pull complete
+8e8fc335550f: Pull complete
+Digest: sha256:b931289e6807c6a7728dfabe7fb4ad0bee772969763015abfae0f975765e8521
+Status: Downloaded newer image for mongo-express:0.42
+Building parse-server-app
+Step 1/4 : FROM node:8.5.0-alpine
+8.5.0-alpine: Pulling from library/node
+88286f41530e: Pull complete
+aa0be12c5610: Pull complete
+719d346e6de2: Pull complete
+Digest: sha256:945cf56668d3e58a3b045291564963ccde29a68da9c1483e19d8a0b06749db06
+Status: Downloaded newer image for node:8.5.0-alpine
+ ---> 7a779c246a41
+Step 2/4 : ADD . /app
+ ---> c58c2d1fb2de
+Step 3/4 : WORKDIR /app
+ ---> a0f31e520853
+Removing intermediate container 308fb5f053e8
+Step 4/4 : CMD node index.js
+ ---> Running in 3204f4a79655
+ ---> cf87314fc55d
+Removing intermediate container 3204f4a79655
+Successfully built cf87314fc55d
+Successfully tagged 127.0.0.1:5000/stack-app:latest
+Pulling parse-client-app (nginx:1.13.5-alpine)...
+1.13.5-alpine: Pulling from library/nginx
+019300c8a437: Pull complete
+51eec16c8842: Pull complete
+671afb97c888: Pull complete
+7ccd7cf6f91a: Pull complete
+Digest: sha256:83f10f82722087e6944e0348b2e64a95baf247135de7c237f4dec7729a386d7f
+Status: Downloaded newer image for nginx:1.13.5-alpine
+Creating appstack_mongo_1 ...
+Creating appstack_mongo_1 ... done
+Creating appstack_mongo-express_1 ...
+Creating appstack_mongo-express_1 ... done
+Creating appstack_parse-server-app_1 ...
+Creating appstack_parse-server-app_1 ... done
+Creating appstack_parse-client-app_1 ...
+Creating appstack_parse-client-app_1 ... done
 ----
 
-.check deployments
+.check compose deployments
 [source,bash]
 ----
 http :8081
@@ -107,70 +214,85 @@ http :80
 .stop and remove volumes
 [source,bash]
 ----
-docker-compose -f docker-compose-all-v3.yml down --volumes
-----
-
-.initialize docker swarm cluster
-[source,bash]
-----
-docker swarm init                                                                      15:30:11
-Swarm initialized: current node (v8dubeou5jz60yieigxu8rh8p) is now a manager.
-
-To add a worker to this swarm, run the following command:
-
-    docker swarm join --token SWMTKN-1-2g0xctse6vv7vmeaa5reast7ajmgicxwahd6lg6c35jzknp1eb-1da7gghwm68cngrfrlkzkxz2n 192.168.65.2:2377
-
-To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
-
-docker node ls
-ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS
-2id006r5r6boesrvtexlgvn4z *   moby                Ready               Active              Leader
-----
-
-.add docker service registery as a service
-[source,bash]
-----
-docker service create --name registry --publish 5000:5000 registry:2
-2g1qzxk4uo98akb4f29m4e6ox
-Since --detach=false was not specified, tasks will be created in the background.
-In a future release, --detach=false will become the default.
-
-docker service ls
-
-ID                  NAME                MODE                REPLICAS            IMAGE               PORTS
-2g1qzxk4uo98        registry            replicated          1/1                 registry:2          *:5000->5000/tcp
-
-curl http://localhost:5000/v2/                                                                                  22:38:20
-{}
-----
-
-.add docker service registery as a service
-[source,bash]
-----
-docker-compose down --volumes
-Stopping appstack_mongo-express_1 ... done
-Stopping appstack_mongo_1         ... done
-Removing appstack_mongo-express_1 ... done
-Removing appstack_mongo_1         ... done
-Removing network appstack_backing-services
+docker-compose -f docker-compose-all-v3.yml down -v
+Stopping appstack_parse-client-app_1 ... done
+Stopping appstack_parse-server-app_1 ... done
+Stopping appstack_mongo-express_1    ... done
+Stopping appstack_mongo_1            ... done
+Removing appstack_parse-client-app_1 ... done
+Removing appstack_parse-server-app_1 ... done
+Removing appstack_mongo-express_1    ... done
+Removing appstack_mongo_1            ... done
+Removing network appstack_default
+Removing volume appstack_parse-server-app-data
+Removing volume appstack_parse-client-app-data
 Removing volume appstack_mongo-data
 ----
 
-.publish generated images
-[source,bash]
+.deploy stack
 ----
 docker-compose push
-Stopping appstack_mongo-express_1 ... done
-Stopping appstack_mongo_1         ... done
-Removing appstack_mongo-express_1 ... done
-Removing appstack_mongo_1         ... done
-Removing network appstack_backing-services
-Removing volume appstack_mongo-data
+docker stack deploy --compose-file docker-compose-all-v3.yml stack-app
+Ignoring unsupported options: build, restart
+
+Creating network stack-app_default
+Creating service stack-app_parse-client-app
+Creating service stack-app_mongo
+Creating service stack-app_mongo-express
+Creating service stack-app_parse-server-app
 ----
 
-TODO: docker stack deploy...
+.check that it is running
+[source,bash]
+----
+docker stack services stack-app
+ID                  NAME                         MODE                REPLICAS            IMAGE                             PORTS
+8f53g2uexxpf        stack-app_mongo-express      replicated          1/1                 mongo-express:0.42                *:8081->8081/tcp
+askks34k82qh        stack-app_parse-client-app   replicated          1/1                 nginx:1.13.5-alpine               *:80->80/tcp
+wpghxhb1hk3w        stack-app_parse-server-app   replicated          1/1                 127.0.0.1:5000/stack-app:latest   *:1337->1337/tcp
+y11falu1g1eo        stack-app_mongo              replicated          1/1                 healthcheck/mongo:latest          *:27017->27017/tcp
+----
 
-check deployments:
+.check swarm stack deployments
+[source,bash]
+----
+http :8081
+http :1337
+http :80
+----
+
+.cleanup
+[source,bash]
+----
+docker stack rm stack-app
+Removing service stack-app_mongo
+Removing service stack-app_mongo-express
+Removing service stack-app_parse-client-app
+Removing service stack-app_parse-server-app
+Removing network stack-app_default
+
+cd ../
+rm -rf app-stack
+----
+
+.bye
+[source,bash]
+----
+docker service rm registry
+registry
+
+docker swarm leave --force
+Node left the swarm.
+
+docker system prune --all                                                              16:29:35
+WARNING! This will remove:
+        - all stopped containers
+        - all networks not used by at least one container
+        - all images without at least one container associated to them
+        - all build cache
+Are you sure you want to continue? [y/N] y
+# ...
+----
 
 . link:http://localhost:8081/[mongo express on http://localhost:8081]
 . link:http://localhost:1337/[parse server app on http://localhost:1337]
