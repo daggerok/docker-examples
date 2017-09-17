@@ -113,12 +113,12 @@ docker-compose -f docker-compose-all-v3.yml down --volumes
 .initialize docker swarm cluster
 [source,bash]
 ----
-docker swarm init
-Swarm initialized: current node (2id006r5r6boesrvtexlgvn4z) is now a manager.
+docker swarm init                                                                      15:30:11
+Swarm initialized: current node (v8dubeou5jz60yieigxu8rh8p) is now a manager.
 
 To add a worker to this swarm, run the following command:
 
-    docker swarm join --token SWMTKN-1-1rd0wjyzyh7x7jxrzhsbtec9aj257j3bc2aq1xneg2kynp8ng7-595zrmpxlmnvjh7gll9gih455 192.168.65.2:2377
+    docker swarm join --token SWMTKN-1-2g0xctse6vv7vmeaa5reast7ajmgicxwahd6lg6c35jzknp1eb-1da7gghwm68cngrfrlkzkxz2n 192.168.65.2:2377
 
 To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
 
@@ -147,7 +147,19 @@ curl http://localhost:5000/v2/                                                  
 .add docker service registery as a service
 [source,bash]
 ----
-docker-compose down --volumes                                                          15:13:11
+docker-compose down --volumes
+Stopping appstack_mongo-express_1 ... done
+Stopping appstack_mongo_1         ... done
+Removing appstack_mongo-express_1 ... done
+Removing appstack_mongo_1         ... done
+Removing network appstack_backing-services
+Removing volume appstack_mongo-data
+----
+
+.publish generated images
+[source,bash]
+----
+docker-compose push
 Stopping appstack_mongo-express_1 ... done
 Stopping appstack_mongo_1         ... done
 Removing appstack_mongo-express_1 ... done
