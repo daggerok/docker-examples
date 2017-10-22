@@ -5,3 +5,4 @@ This repository is contains examples of using docker in swarm mode as docker swa
 . link:00-dockerfile/[Dockerfile example]
 . link:01-docker-compose/[docker-compose example]
 . link:02-docker-stack-deploy/[docker stack deploy example]
+. link:containerize-step-by-step/[container less → docker → docker-compose → docker-swarm → kubernetes]
