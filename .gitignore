@@ -1,4 +1,4 @@
-docker-compose-kong/docker-kong
+kong-docker-compose/docker-kong
 kubernetes-examples
 
 00-Dockerfile/docker-app

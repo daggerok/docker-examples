@@ -23,3 +23,5 @@ docker container run --rm -it --name ucp \
 ----
 
 open https://0.0.0.0/
+
+TODO: in progress... deploy to docker swarm (UCP) link:../kong-docker/[this] or link:../kong-docker-compose/[this]
