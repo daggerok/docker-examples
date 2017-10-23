@@ -1,0 +1,25 @@
+= UCP | Docker Swarm
+
+.init cluster using ucp
+[source,bash]
+----
+docker image pull docker/ucp:2.2.3
+
+# see https://docs.docker.com/datacenter/ucp/2.2/reference/cli/install/#options
+docker container run --rm -it --name ucp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  docker/ucp:2.2.3 install \
+  --admin-username=admin \
+  --admin-password=12345678 \
+  -i --swarm-port 3376 \
+  --host-address $(ipconfig getifaddr en0)
+
+# or interactive
+docker container run --rm -it --name ucp \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  docker/ucp:2.2.3 install \
+  --host-address 192.168.0.123 \
+  --interactive
+----
+
+open https://0.0.0.0/
