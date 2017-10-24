@@ -1,0 +1,3 @@
+= kong | Kubernetes
+
+check docker swarm to kubernetes migration link:../../../../kubernetes-examples/tree/master/kong/[here]

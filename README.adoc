@@ -11,3 +11,4 @@ This repository is contains examples of using docker in swarm mode as docker swa
   .. link:kong-docker/[run Kong with Docker]
   .. link:kong-docker-compose/[run Kong with Docker Compose]
   .. link:kong-docker-swarm-using-ucp/[run Kong with Docker Swarm cluster using UCP]
+  .. link:kong-kubernetes/[run Kong with Kubernetes]
