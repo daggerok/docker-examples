@@ -1,7 +1,5 @@
 = UCP | Docker Swarm
 
-TODO: in progress...
-
 .init cluster using ucp
 [source,bash]
 ----
@@ -27,10 +25,10 @@ docker container run --rm -it --name ucp \
 .create overlay network
 [source,bash]
 ----
-docker network create -d overlay kong-net
+docker network create -d overlay kong-application
 ----
 
-.create and run global statefull database service
+.create and run global stateful database service
 [source,bash]
 ----
 docker service create --detach=false \
@@ -51,6 +49,7 @@ docker service create --detach=false \
 .run kong migration
 [source,bash]
 ----
+docker pull kong:0.11.0
 docker service create --detach=true \
   --name migrations \
   -e "KONG_DATABASE=postgres" \
@@ -97,3 +96,10 @@ open http://0.0.0.0:8080/
 
 check cluster info
 open https://0.0.0.0/
+
+----
+cd kong-docker-swarm-using-ucp/
+bash ./swarm-start.bash
+bash ./swarm-scale.bash
+bash ./swarm-cleanup.bash
+----
