@@ -98,8 +98,7 @@ check cluster info
 open https://0.0.0.0/
 
 ----
-cd kong-docker-swarm-using-ucp/
-bash ./swarm-start.bash
-bash ./swarm-scale.bash
-bash ./swarm-cleanup.bash
+bash kong-docker-swarm-using-ucp/swarm-start.bash
+bash kong-docker-swarm-using-ucp/swarm-scale.bash
+bash kong-docker-swarm-using-ucp/swarm-cleanup.bash
 ----
