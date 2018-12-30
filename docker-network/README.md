@@ -23,10 +23,10 @@ docker network rm mvnet
 
 ```bash
 docker network create -d macvlan --subnet 192.168.10.0/24 --gateway 192.168.10.1 -o parent=eth0.10 mvnet10
-
 docker network create -d macvlan --subnet 192.168.20.0/24 --gateway 192.168.20.1 -o parent=eth0.20 mvnet20
 
 docker run -itd --name c1 --net mvnet10 --ip 192.168.10.2 busybox sh
+
 docker run -it --name c2 --net mvnet20 --ip 192.168.20.2 busybox sh
 
 docker rm -f -v c1 c2
