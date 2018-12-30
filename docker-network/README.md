@@ -1,7 +1,7 @@
 
 Read [official docker article](https://success.docker.com/article/networking)
 
-== macvlan
+## macvlan
 
 ![](https://success.docker.com/api/images/.%2Frefarch%2Fnetworking%2Fimages%2Fmacvlanarch.png)
 
