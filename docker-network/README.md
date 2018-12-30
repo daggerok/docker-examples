@@ -26,8 +26,8 @@ docker network create -d macvlan --subnet 192.168.10.0/24 --gateway 192.168.10.1
 
 docker network create -d macvlan --subnet 192.168.20.0/24 --gateway 192.168.20.1 -o parent=eth0.20 macvlan20
 
-docker run -itd --name c1--net macvlan10 --ip 192.168.10.2 busybox sh
-docker run -it --name c2--net macvlan20 --ip 192.168.20.2 busybox sh
+docker run -itd --name c1 --net macvlan10 --ip 192.168.10.2 busybox sh
+docker run -it --name c2 --net macvlan20 --ip 192.168.20.2 busybox sh
 
 docker rm -f -v c1 c2
 docker network rm macvlan10 macvlan20
